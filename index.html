@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Tic-Tac-Toe</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface-2: #243044;
+      --border: #2d3a4f;
+      --text: #e8eef6;
+      --muted: #8b9bb4;
+      --x: #5b9fd4;
+      --o: #e8a87c;
+      --accent: #6c9bcf;
+      --accent-hover: #7eabd9;
+      --win: #7dcea0;
+      --danger: #e07a7a;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      --radius: 16px;
+      --cell: min(22vw, 96px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100dvh;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, #1e3a5f 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, #2a1f18 0%, transparent 50%),
+        var(--bg);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .app {
+      width: min(100%, 420px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 4px);
+      box-shadow: var(--shadow);
+      padding: 1.5rem 1.35rem 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    header {
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .panel {
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel.active {
+      display: flex;
+    }
+
+    .mode-grid {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      font-size: 1rem;
+      padding: 0.9rem 1.1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      width: 100%;
+    }
+
+    .btn:hover {
+      background: #2c3b52;
+      border-color: #3d4f6a;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(160deg, var(--accent), #4a7fb0);
+      border-color: transparent;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(160deg, var(--accent-hover), #5a8fc0);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.9rem;
+      padding: 0.65rem;
+    }
+
+    .btn-ghost:hover {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .status {
+      text-align: center;
+      min-height: 2.6rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.2rem;
+    }
+
+    .status-main {
+      font-size: 1.1rem;
+      font-weight: 650;
+    }
+
+    .status-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .status.win .status-main {
+      color: var(--win);
+    }
+
+    .status.draw .status-main {
+      color: var(--o);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, var(--cell));
+      grid-template-rows: repeat(3, var(--cell));
+      gap: 0.55rem;
+      margin: 0 auto;
+      padding: 0.5rem;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .cell {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: calc(var(--cell) * 0.48);
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+      line-height: 1;
+      user-select: none;
+    }
+
+    .cell:hover:not(:disabled) {
+      background: #31435c;
+      box-shadow: inset 0 0 0 2px #4a6285;
+    }
+
+    .cell:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
+    .cell:disabled {
+      cursor: default;
+    }
+
+    .cell.x {
+      color: var(--x);
+    }
+
+    .cell.o {
+      color: var(--o);
+    }
+
+    .cell.win-line {
+      background: rgba(125, 206, 160, 0.18);
+      box-shadow: inset 0 0 0 2px var(--win);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.3rem 0.75rem;
+      align-self: center;
+    }
+
+    .badge strong {
+      color: var(--text);
+      font-weight: 650;
+    }
+
+    .mark-x { color: var(--x); font-weight: 700; }
+    .mark-o { color: var(--o); font-weight: 700; }
+
+    footer {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      opacity: 0.85;
+    }
+
+    @media (max-width: 380px) {
+      .app {
+        padding: 1.15rem 1rem 1rem;
+      }
+      header h1 {
+        font-size: 1.35rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <h1>Tic-Tac-Toe</h1>
+      <p>Klassisches Drei-Gewinnt</p>
+    </header>
+
+    <!-- Mode select -->
+    <section class="panel active" id="panel-menu" aria-label="Modus wählen">
+      <div class="mode-grid">
+        <button type="button" class="btn btn-primary" id="btn-1p">
+          1 Spieler <span class="mark-x">(du = X)</span> vs. KI
+        </button>
+        <button type="button" class="btn" id="btn-2p">
+          2 Spieler (Hotseat)
+        </button>
+      </div>
+      <p class="status-sub" style="text-align:center;color:var(--muted)">
+        In 1-Spieler-Modus spielst du als <span class="mark-x">X</span>, die KI als <span class="mark-o">O</span>.
+      </p>
+    </section>
+
+    <!-- Game -->
+    <section class="panel" id="panel-game" aria-label="Spielfeld">
+      <div class="badge" id="mode-badge"><strong>—</strong></div>
+      <div class="status" id="status" role="status" aria-live="polite">
+        <div class="status-main" id="status-main">Bereit</div>
+        <div class="status-sub" id="status-sub"></div>
+      </div>
+
+      <div class="board" id="board" role="grid" aria-label="Spielfeld 3×3"></div>
+
+      <div class="btn-row">
+        <button type="button" class="btn" id="btn-restart">Neu starten</button>
+        <button type="button" class="btn" id="btn-switch">Modus wechseln</button>
+      </div>
+      <button type="button" class="btn btn-ghost" id="btn-menu">Zum Menü</button>
+    </section>
+
+    <footer>Viel Spaß, Torsten!</footer>
+  </div>
+
+  <script>
+(function () {
+  "use strict";
+
+  const WIN_LINES = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6],
+  ];
+
+  const el = {
+    menu: document.getElementById("panel-menu"),
+    game: document.getElementById("panel-game"),
+    board: document.getElementById("board"),
+    status: document.getElementById("status"),
+    statusMain: document.getElementById("status-main"),
+    statusSub: document.getElementById("status-sub"),
+    modeBadge: document.getElementById("mode-badge"),
+    btn1p: document.getElementById("btn-1p"),
+    btn2p: document.getElementById("btn-2p"),
+    btnRestart: document.getElementById("btn-restart"),
+    btnSwitch: document.getElementById("btn-switch"),
+    btnMenu: document.getElementById("btn-menu"),
+  };
+
+  /** @type {"1p"|"2p"} */
+  let mode = "1p";
+  /** @type {(null|"X"|"O")[]} */
+  let board = Array(9).fill(null);
+  /** @type {"X"|"O"} */
+  let current = "X";
+  let gameOver = false;
+  let aiThinking = false;
+  /** @type {number[]|null} */
+  let winLine = null;
+
+  function showPanel(name) {
+    el.menu.classList.toggle("active", name === "menu");
+    el.game.classList.toggle("active", name === "game");
+  }
+
+  function emptyIndices(b) {
+    const out = [];
+    for (let i = 0; i < 9; i++) if (!b[i]) out.push(i);
+    return out;
+  }
+
+  function findWinner(b) {
+    for (const line of WIN_LINES) {
+      const [a, c, d] = line;
+      if (b[a] && b[a] === b[c] && b[a] === b[d]) {
+        return { player: b[a], line };
+      }
+    }
+    return null;
+  }
+
+  function isDraw(b) {
+    return emptyIndices(b).length === 0 && !findWinner(b);
+  }
+
+  /**
+   * Perfect-play minimax. O maximizes, X minimizes.
+   * Returns score from O's perspective.
+   */
+  function minimax(b, isMaximizing, depth, alpha, beta) {
+    const w = findWinner(b);
+    if (w) {
+      return w.player === "O" ? 10 - depth : depth - 10;
+    }
+    if (emptyIndices(b).length === 0) return 0;
+
+    if (isMaximizing) {
+      let best = -Infinity;
+      for (const i of emptyIndices(b)) {
+        b[i] = "O";
+        best = Math.max(best, minimax(b, false, depth + 1, alpha, beta));
+        b[i] = null;
+        alpha = Math.max(alpha, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (const i of emptyIndices(b)) {
+        b[i] = "X";
+        best = Math.min(best, minimax(b, true, depth + 1, alpha, beta));
+        b[i] = null;
+        beta = Math.min(beta, best);
+        if (beta <= alpha) break;
+      }
+      return best;
+    }
+  }
+
+  function bestAiMove(b) {
+    let bestScore = -Infinity;
+    let moves = [];
+    for (const i of emptyIndices(b)) {
+      b[i] = "O";
+      const score = minimax(b, false, 0, -Infinity, Infinity);
+      b[i] = null;
+      if (score > bestScore) {
+        bestScore = score;
+        moves = [i];
+      } else if (score === bestScore) {
+        moves.push(i);
+      }
+    }
+    // Prefer center / corners among equally optimal moves for variety
+    const preferred = [4, 0, 2, 6, 8, 1, 3, 5, 7];
+    for (const p of preferred) {
+      if (moves.includes(p)) return p;
+    }
+    return moves[0];
+  }
+
+  function setStatus(main, sub, kind) {
+    el.statusMain.textContent = main;
+    el.statusSub.textContent = sub || "";
+    el.status.classList.remove("win", "draw");
+    if (kind) el.status.classList.add(kind);
+  }
+
+  function updateStatus() {
+    if (gameOver) {
+      const w = findWinner(board);
+      if (w) {
+        if (mode === "1p") {
+          if (w.player === "X") {
+            setStatus("Du gewinnst!", "Gut gespielt.", "win");
+          } else {
+            setStatus("KI gewinnt!", "Versuch es noch einmal.", "win");
+          }
+        } else {
+          setStatus("Spieler " + w.player + " gewinnt!", "Glückwunsch!", "win");
+        }
+      } else {
+        setStatus("Unentschieden!", "Keiner hat gewonnen.", "draw");
+      }
+      return;
+    }
+
+    if (mode === "1p") {
+      if (current === "X") {
+        setStatus("Dein Zug", "Du spielst als X");
+      } else {
+        setStatus("KI denkt …", "Bitte warten");
+      }
+    } else {
+      setStatus("Spieler " + current + " ist dran", "Hotseat – gleicher Bildschirm");
+    }
+  }
+
+  function renderBoard() {
+    el.board.innerHTML = "";
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "cell";
+      cell.setAttribute("role", "gridcell");
+      cell.setAttribute("aria-label", "Feld " + (i + 1));
+      const mark = board[i];
+      if (mark) {
+        cell.textContent = mark;
+        cell.classList.add(mark.toLowerCase());
+        cell.disabled = true;
+      } else {
+        cell.disabled = gameOver || aiThinking || (mode === "1p" && current === "O");
+      }
+      if (winLine && winLine.includes(i)) {
+        cell.classList.add("win-line");
+      }
+      cell.addEventListener("click", () => onCellClick(i));
+      el.board.appendChild(cell);
+    }
+  }
+
+  function endIfNeeded() {
+    const w = findWinner(board);
+    if (w) {
+      gameOver = true;
+      winLine = w.line;
+      return true;
+    }
+    if (isDraw(board)) {
+      gameOver = true;
+      winLine = null;
+      return true;
+    }
+    return false;
+  }
+
+  function onCellClick(i) {
+    if (gameOver || aiThinking || board[i]) return;
+    if (mode === "1p" && current !== "X") return;
+
+    board[i] = current;
+    if (endIfNeeded()) {
+      renderBoard();
+      updateStatus();
+      return;
+    }
+
+    current = current === "X" ? "O" : "X";
+    renderBoard();
+    updateStatus();
+
+    if (mode === "1p" && current === "O" && !gameOver) {
+      scheduleAiMove();
+    }
+  }
+
+  function scheduleAiMove() {
+    aiThinking = true;
+    renderBoard();
+    updateStatus();
+    // Short delay so the UI feels responsive / human
+    setTimeout(() => {
+      if (gameOver || current !== "O") {
+        aiThinking = false;
+        return;
+      }
+      const move = bestAiMove(board.slice());
+      board[move] = "O";
+      aiThinking = false;
+      if (endIfNeeded()) {
+        renderBoard();
+        updateStatus();
+        return;
+      }
+      current = "X";
+      renderBoard();
+      updateStatus();
+    }, 280);
+  }
+
+  function startGame(selectedMode) {
+    mode = selectedMode;
+    board = Array(9).fill(null);
+    current = "X";
+    gameOver = false;
+    aiThinking = false;
+    winLine = null;
+
+    el.modeBadge.innerHTML =
+      mode === "1p"
+        ? "<strong>1 Spieler</strong> · du = <span class=\"mark-x\">X</span>, KI = <span class=\"mark-o\">O</span>"
+        : "<strong>2 Spieler</strong> · Hotseat";
+
+    showPanel("game");
+    renderBoard();
+    updateStatus();
+  }
+
+  function restart() {
+    startGame(mode);
+  }
+
+  function switchMode() {
+    startGame(mode === "1p" ? "2p" : "1p");
+  }
+
+  function goMenu() {
+    showPanel("menu");
+  }
+
+  el.btn1p.addEventListener("click", () => startGame("1p"));
+  el.btn2p.addEventListener("click", () => startGame("2p"));
+  el.btnRestart.addEventListener("click", restart);
+  el.btnSwitch.addEventListener("click", switchMode);
+  el.btnMenu.addEventListener("click", goMenu);
+})();
+  </script>
+</body>
+</html>
